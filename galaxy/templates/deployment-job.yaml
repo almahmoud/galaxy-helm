@@ -97,9 +97,6 @@ spec:
               subPath: {{ $key }}
             {{- end }}
             - name: galaxy-data
-              mountPath: /galaxy/server/config/mutable/
-              subPath: config
-            - name: galaxy-data
               mountPath: {{ .Values.persistence.mountPath }}
             {{- if .Values.cvmfs.enabled }}
             - name: cvmfs-gxy-main
