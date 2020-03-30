@@ -1,0 +1,38 @@
+name: Package
+# This workflow is triggered on pushes to the repository.
+on: pull_request
+
+jobs:
+  package:
+    if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true
+    name: Package and push
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: Install bumpversion dependency
+        run: |
+          python -m pip install --upgrade pip
+          pip install bump2version pyyaml
+      - name: Bump version if necessary
+        run: ./.github/scripts/bump.sh
+        shell: bash
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+      - name: Commit files
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git commit -m "Add changes" -a
+      - name: Push changes
+        run: ./.github/scripts/push.sh
+        shell: bash
+        env:
+          GIT_BRANCH: master
+          GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Package and push to helm-charts
+        run: ./.github/scripts/package.sh
+        shell: bash
+        env:
+          CHARTS_BRANCH: master
+          CHARTS_REPO: almahmoud/helm-charts
+          GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
