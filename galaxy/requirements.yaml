@@ -5,6 +5,7 @@
 ##    helm dep update
 ##
 ## and the requirements.lock file committed.
+
 dependencies:
     - name: postgresql
       repository: https://kubernetes-charts.storage.googleapis.com/
