@@ -18,7 +18,7 @@ jobs:
         run: ./.github/scripts/bump.sh
         shell: bash
         env:
-          GITHUB_CONTEXT: ${{ toYaml(github) }}
+          GITHUB_CONTEXT: ${{ toJson(github) }}
       - name: Commit files
         run: |
           git config --local user.email "action@github.com"
