@@ -1,0 +1,35 @@
+name: Package
+# This workflow is triggered on pushes to the repository.
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  package:
+    name: Package and push
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: Install bumpversion dependency
+        run: |
+          python -m pip install --upgrade pip
+          pip install bump2version pyyaml
+      - name: Bump version if necessary
+        run: sh ./.github/scripts/bump.sh
+        shell: bash
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+          GIT_BRANCH: ci_mar
+      - name: Push changes
+        run: sh ./.github/scripts/push.sh
+        shell: bash
+        env:
+          GIT_BRANCH: ci_mar
+          GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Package and push to helm-charts
+        run: ./.github/scripts/package.sh
+        shell: bash
+        env:
+          CHARTS_BRANCH: master
+          CHARTS_REPO: almahmoud/helm-charts
+          GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
