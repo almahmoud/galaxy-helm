@@ -12,3 +12,5 @@ dependencies:
       repository: https://kubernetes-charts.storage.googleapis.com/
       version: 8.1.4
       condition: postgresql.enabled
+
+
