@@ -5,7 +5,7 @@
 image:
   repository: galaxy/galaxy-k8s
   tag: 20.01
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
 
 nameOverride: ""
 fullnameOverride: ""
