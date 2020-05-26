@@ -96,6 +96,7 @@ affinity: {}
 #       - name: galaxy-data
 #         mountPath: "{{.Values.persistence.mountPath}}"
 
+
 extraInitCommands: |
 #  echo "Running extra mapped script. Influx enabled = {{ .Values.influxdb.enabled }}";
 #  /galaxy/server/extra/mapped/script.sh
