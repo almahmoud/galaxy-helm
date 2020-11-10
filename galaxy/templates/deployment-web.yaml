@@ -24,9 +24,9 @@ spec:
         app.kubernetes.io/instance: {{ .Release.Name }}
         component: galaxy-web-handler
       annotations:
-        checksum/galaxy_conf: {{ include (print $.Template.BasePath "/configs-galaxy.yaml") . | sha256sum }}
-        checksum/galaxy_rules: {{ include (print $.Template.BasePath "/configmap-galaxy-rules.yaml") . | sha256sum }}
-        checksum/galaxy_extras: {{ include (print $.Template.BasePath "/configmap-extra-files.yaml") . | sha256sum }}
+        checksum/galaxy_conf: {{ include (print .Template.BasePath "/configs-galaxy.yaml") . | sha256sum }}
+        checksum/galaxy_rules: {{ include (print .Template.BasePath "/configmap-galaxy-rules.yaml") . | sha256sum }}
+        checksum/galaxy_extras: {{ include (print .Template.BasePath "/configmap-extra-files.yaml") . | sha256sum }}
         {{- with .Values.webHandlers.podAnnotations -}}
         {{ toYaml . | nindent 8 }}
         {{- end }}
@@ -37,7 +37,7 @@ spec:
       initContainers:
         - name: {{ .Chart.Name }}-init-postgres
           image: alpine:3.7
-          command: ['sh', '-c', 'chown 101:101 {{ .Values.persistence.mountPath }}; until nc -z -w3 {{ template "galaxy-postgresql.fullname" $ }} 5432; do echo waiting for galaxy-postgres service; sleep 1; done;']
+          command: ['sh', '-c', 'chown 101:101 {{ .Values.persistence.mountPath }}; until nc -z -w3 {{ template "galaxy-postgresql.fullname" . }} 5432; do echo waiting for galaxy-postgres service; sleep 1; done;']
           volumeMounts:
             - name: galaxy-data
               mountPath: {{ .Values.persistence.mountPath }}
@@ -53,9 +53,37 @@ spec:
             {{- end -}}
             {{- end }}
             - name: galaxy-data
+              mountPath: /galaxy/server/config/mutable/
+              subPath: config
+            - name: galaxy-data
               mountPath: {{ .Values.persistence.mountPath }}
+        - name: {{ .Chart.Name }}-db-migrations
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          command: ['sh', '-c', 'python /galaxy/server/scripts/galaxy-main -c /galaxy/server/config/galaxy.yml; sleep 60 && /galaxy/server/manage_db.sh upgrade']
+          env:
+          {{ include "galaxy.podEnvVars" . }}
+          volumeMounts:
             - name: galaxy-data
               mountPath: /galaxy/server/config/mutable/
+              subPath: config
+            {{- range $key,$entry := .Values.configs }}
+            {{ if $entry -}}
+            - name: galaxy-conf-files
+              mountPath: /galaxy/server/config/{{ $key }}
+              subPath: {{ $key }}
+            {{- end -}}
+            {{- end }}
+            {{- range $key,$entry := .Values.jobs.rules }}
+            - name: galaxy-job-rules
+              mountPath: /galaxy/server/lib/galaxy/jobs/rules/{{ $key }}
+              subPath: {{ $key }}
+            {{- end }}
+        - name: {{ .Chart.Name }}-db-migrations-done
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          command: ['sh', '-c', 'touch /galaxy/server/database/config/db_migrations_done']
+          volumeMounts:
+            - name: galaxy-data
+              mountPath: /galaxy/server/database/config/
               subPath: config
         {{- if .Values.extraInitContainers -}}
         {{- range $each := .Values.extraInitContainers -}}
