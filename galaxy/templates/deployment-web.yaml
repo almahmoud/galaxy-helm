@@ -59,7 +59,7 @@ spec:
               mountPath: {{ .Values.persistence.mountPath }}
         - name: {{ .Chart.Name }}-db-migrations
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          command: ['sh', '-c', 'python /galaxy/server/scripts/galaxy-main -c /galaxy/server/config/galaxy.yml; sleep 60 && /galaxy/server/manage_db.sh upgrade']
+          command: ['sh', '-c', '/galaxy/server/create_db.sh -c /galaxy/server/config/galaxy.yml galaxy && /galaxy/server/create_db.sh -c /galaxy/server/config/galaxy.yml tool_shed && /galaxy/server/create_db.sh -c /galaxy/server/config/galaxy.yml tools && /galaxy/server/create_db.sh -c /galaxy/server/config/galaxy.yml install && echo Done > /galaxy/server/config/mutable/db_migrations_done']
           env:
           {{ include "galaxy.podEnvVars" . }}
           volumeMounts:
@@ -78,13 +78,6 @@ spec:
               mountPath: /galaxy/server/lib/galaxy/jobs/rules/{{ $key }}
               subPath: {{ $key }}
             {{- end }}
-        - name: {{ .Chart.Name }}-db-migrations-done
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          command: ['sh', '-c', 'touch /galaxy/server/database/config/db_migrations_done']
-          volumeMounts:
-            - name: galaxy-data
-              mountPath: /galaxy/server/database/config/
-              subPath: config
         {{- if .Values.extraInitContainers -}}
         {{- range $each := .Values.extraInitContainers -}}
         {{- if $each.applyToWeb -}}

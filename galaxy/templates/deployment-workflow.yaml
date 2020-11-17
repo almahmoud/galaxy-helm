@@ -40,6 +40,12 @@ spec:
           volumeMounts:
             - name: galaxy-data
               mountPath: {{ .Values.persistence.mountPath }}
+        - name: {{ .Chart.Name }}-wait-migrations
+          image: alpine:3.7
+          command: ['sh', '-c', 'chown 101:101 {{ .Values.persistence.mountPath }}; until [ -f /galaxy/server/database/config/db_migrations_done]; do echo waiting for migrations to be done; sleep 1; done;']
+          volumeMounts:
+            - name: galaxy-data
+              mountPath: {{ .Values.persistence.mountPath }}
         {{- if .Values.extraInitContainers -}}
         {{- range $each := .Values.extraInitContainers -}}
         {{- if $each.applyToJob -}}
